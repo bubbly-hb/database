@@ -144,3 +144,64 @@ SELECT TIMESTAMPDIFF(MONTH, '2018-01-01', '2018-06-01') result  # 5
 SELECT TIMESTAMPDIFF(MINUTE, '2018-01-01 10:00:00', '2018-01-01 10:45:00') result   # 45
 ```
 
+# group by
+group by 后面的列名，只能是select后面列中没有使用过聚合函数的列
+
+# [count(1), count(*), count(col)](https://www.cnblogs.com/hider/p/11726690.html)
+COUNT函数的用法，主要用于统计表行数。主要用法有COUNT(*)、COUNT(字段)和COUNT(1)。
+因为COUNT(*)是SQL92定义的标准统计行数的语法，所以MySQL对他进行了很多优化，MyISAM中会直接把表的总行数单独记录下来供COUNT(*)查询，而InnoDB则会在扫表的时候选择最小的索引来降低成本。当然，这些优化的前提都是没有进行where和group的条件查询。
+在InnoDB中COUNT(*)和COUNT(1)实现上没有区别，而且效率一样，但是COUNT(字段)需要进行字段的非NULL判断，所以效率会低一些。
+因为COUNT(*)是SQL92定义的标准统计行数的语法，并且效率高，所以请直接使用COUNT(*)查询表的行数！
+
+# 求最值
+考虑排序+limit
+
+# [group by + min](https://leetcode.cn/problems/game-play-analysis-i/?envType=study-plan&id=sql-beginner&plan=sql&plan_progress=fjtkmrh)
+```sql
+select player_id, min(event_date) first_login from activity group by player_id;
+```
+
+# [日期处理 eg:查找2020年最后一次的登录时间](https://leetcode.cn/problems/the-latest-login-in-2020/)
+```sql
+select user_id, max(time_stamp) last_stamp from logins 
+where datediff('2020-12-31', time_stamp) >= 0 and
+      datediff('2020-01-01', time_stamp) <= 0 
+group by user_id;
+```
+或者用year:
+```sql
+select user_id, max(time_stamp) last_stamp from logins 
+where year(time_stamp) = 2020
+group by user_id;
+```
+
+# [价格周期变化求最终值可以考虑case when + sum](https://leetcode.cn/problems/capital-gainloss/)
+```sql
+select stock_name, sum(
+    case when operation = "Buy" then -price
+    else price
+    end
+) capital_gain_loss 
+from stocks
+group by stock_name;
+```
+
+# [order by 多字段](https://leetcode.cn/problems/top-travellers/)
+按距离降序，名称升序：
+```sql
+select name, sum(
+    case when distance is null then 0
+    else distance
+    end
+) travelled_distance 
+from users left join rides on rides.user_id = users.id
+group by users.id
+order by travelled_distance desc, name;
+```
+
+# having 结合group by, 放group by后面
+比如[查找重复的电子邮件](https://leetcode.cn/problems/duplicate-emails/):
+```sql
+select email Email from person group by email having count(*) > 1;
+```
+
